@@ -46,11 +46,15 @@ app.post('/api/contact', async (req, res) => {
       text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
     };
 
-    // Try sending email, but don't fail the request if credentials are placeholders
-    if (process.env.EMAIL_USER !== 'your_email@gmail.com') {
-      await transporter.sendMail(mailOptions);
-    } else {
-      console.log('Skipping email send because placeholder credentials are used.');
+    try {
+      if (process.env.EMAIL_USER && process.env.EMAIL_USER !== 'your_email@gmail.com') {
+        await transporter.sendMail(mailOptions);
+      } else {
+        console.log('Skipping email send because placeholder credentials are used.');
+      }
+    } catch (emailError) {
+      console.error('Nodemailer failed to send email:', emailError);
+      // We do not throw or return 500 here, because the contact was already saved to MongoDB successfully.
     }
 
     res.status(201).json({ message: 'Message sent successfully!' });
