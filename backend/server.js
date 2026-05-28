@@ -24,10 +24,14 @@ mongoose.connect(process.env.MONGODB_URI)
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false, // false for port 587 (uses STARTTLS)
+  secure: false,
+  family: 4, // Force IPv4 — Render blocks outbound IPv6
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
