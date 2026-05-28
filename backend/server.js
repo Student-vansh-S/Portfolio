@@ -1,12 +1,8 @@
 require('dotenv').config();
-const dns = require('dns');
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const Contact = require('./models/Contact');
 
 const app = express();
@@ -20,20 +16,8 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
-// Nodemailer Transporter Setup
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  family: 4, // Force IPv4 — Render blocks outbound IPv6
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+// Resend Email Client (uses HTTPS, not SMTP — works on Render)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Routes
 app.post('/api/contact', async (req, res) => {
@@ -48,20 +32,18 @@ app.post('/api/contact', async (req, res) => {
     const newContact = new Contact({ name, email, subject, message });
     await newContact.save();
 
-    // Send Email
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, // Send to yourself
-      subject: `Portfolio Contact: ${subject}`,
-      text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
-    };
-
-    if (process.env.EMAIL_USER && process.env.EMAIL_USER !== 'your_email@gmail.com') {
-      transporter.sendMail(mailOptions)
-        .then(() => console.log('Email sent successfully'))
-        .catch((emailError) => console.error('Nodemailer failed to send email:', emailError));
+    // Send Email via Resend (HTTP API — bypasses SMTP port blocks)
+    if (process.env.RESEND_API_KEY) {
+      resend.emails.send({
+        from: 'Portfolio Contact <onboarding@resend.dev>',
+        to: process.env.EMAIL_USER,
+        subject: `Portfolio Contact: ${subject}`,
+        text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+      })
+        .then(() => console.log('Email sent successfully via Resend'))
+        .catch((emailError) => console.error('Resend failed to send email:', emailError));
     } else {
-      console.log('Skipping email send because placeholder credentials are used.');
+      console.log('Skipping email: RESEND_API_KEY not configured.');
     }
 
     res.status(201).json({ message: 'Message sent successfully!' });
