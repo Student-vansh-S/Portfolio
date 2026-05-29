@@ -30,7 +30,7 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out ${scrolled
         ? 'bg-white/90 dark:bg-darker/90 backdrop-blur-xl shadow-md border-b border-gray-light dark:border-white/10 py-3'
-        : 'bg-white/10 dark:bg-darker/30 backdrop-blur-md border-b border-white/20 dark:border-white/10 py-5 lg:py-6'
+        : 'bg-white/10 dark:bg-darker/20 backdrop-blur-md border-b border-white/20 dark:border-white/10 py-5 lg:py-6'
         }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
